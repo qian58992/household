@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Household Finances</title>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#faf6ef; --surface:#fffdf8; --line:#e4d9c7; --grid:#efe6d8;
+  --ink:#2a1812; --ink2:#6e3a2c; --ink3:#7a6656;
+  --s1:#d0626a; --s2:#e3b595; --s3:#78853a; --s4:#b4a294;
+  --warn:#8a2f37; --warnbg:#fbe9e7; --bad:#d60518; --good:#5f6b2c; --neg:#d0626a;
+  --acc:#d0626a; --onacc:#ffffff;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 56px}
+header{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:flex-end;justify-content:space-between;margin-bottom:12px}
+h1{font-size:24px;margin:0;letter-spacing:-.01em}
+.sub{color:var(--ink2);font-size:13px}
+.badge{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--warnbg);color:var(--warn);margin-left:8px;vertical-align:middle}
+.tabs{display:flex;gap:4px;background:var(--grid);padding:3px;border-radius:10px}
+.tabs button{border:0;background:transparent;color:var(--ink2);font:inherit;font-size:13px;font-weight:600;padding:6px 16px;border-radius:8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.toolbar{display:flex;flex-wrap:wrap;gap:16px;align-items:center;margin:0 0 16px;font-size:13px;color:var(--ink2)}
+.toolbar label{display:flex;gap:6px;align-items:center;cursor:pointer}
+.grid{display:grid;gap:12px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-bottom:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h2{font-size:15px;margin:0 0 2px}
+.card .hint{font-size:12px;color:var(--ink3);margin:0 0 12px}
+.kpi .lab{font-size:12px;color:var(--ink2)}
+.kpi .val{font-size:26px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums;margin:2px 0}
+.kpi .val.neg{color:var(--bad)}
+.kpi .note{font-size:12px;color:var(--ink3)}
+.kpi .note.w{color:var(--warn)}
+.two{grid-template-columns:repeat(auto-fit,minmax(380px,1fr));margin-bottom:12px}
+@media (max-width:480px){.two{grid-template-columns:1fr}}
+section{margin-bottom:12px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink2);margin:8px 0 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+svg{display:block;width:100%;height:auto;overflow:visible}
+svg text{font:11px system-ui,sans-serif;fill:var(--ink3)}
+svg text.t2{fill:var(--ink2)}
+svg text.tg{fill:var(--good);font-weight:600}
+svg text.tb{fill:var(--ink);font-weight:600}
+svg text.on{fill:var(--onacc);font-weight:600;font-size:12px}
+.bar{cursor:default}
+.bar:hover{opacity:.85}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:6px 8px;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--ink2);font-weight:600}
+details{margin-top:10px;font-size:12px;color:var(--ink2)}
+summary{cursor:pointer}
+.strip{display:flex;height:22px;gap:2px;margin:6px 0 10px}
+.strip div{border-radius:4px;min-width:3px}
+.rows .r{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}
+.rows .r span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.rows .r.sub span:first-child{padding-left:16px;color:var(--ink2)}
+.rows .r.tot{font-weight:650}
+.bubble{margin-top:14px;border:1px solid var(--warn);background:var(--warnbg);color:var(--warn);border-radius:14px;padding:10px 14px}
+.bubble.fx{border-color:var(--ink3);background:var(--grid);color:var(--ink2)}
+.bubble .bh{display:flex;justify-content:space-between;font-weight:650;font-size:14px}
+.bubble .br{display:flex;justify-content:space-between;font-size:13px;padding-top:4px;font-variant-numeric:tabular-nums}
+.in{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px;margin-top:6px}
+.in.n3{grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.in label,.lbl{display:block;font-size:12px;color:var(--ink2)}
+input[type=text],input[type=date],input[type=number]{width:100%;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit;font-variant-numeric:tabular-nums}
+.prog{height:10px;background:var(--grid);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.prog div{height:100%;background:var(--acc);border-radius:99px}
+.cf .r{align-items:center}
+.cf .bw{flex:1;max-width:240px;height:8px}
+.cf .bw div{height:8px;border-radius:4px}
+.warnbox{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:14px 16px;font-size:13px}
+.warnbox ul{margin:6px 0 0;padding-left:18px}
+.warnbox li{margin:3px 0}
+#tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:8px;opacity:0;transition:opacity .08s;z-index:9;white-space:pre;line-height:1.45}
+.muted{color:var(--ink3)}
+.btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer}
+.btn.p{background:var(--acc);border-color:var(--acc);color:var(--onacc)}
+.btn.sm{padding:5px 10px;font-weight:500}
+.trow{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:8px;align-items:center}
+.inv{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;align-items:center;margin-top:8px;font-size:13px}
+.inv .h{font-size:12px;color:var(--ink2)}
+.inv .cost{text-align:right;color:var(--ink2);font-variant-numeric:tabular-nums}
+.msg{font-size:13px;margin-left:10px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>Household finances <span class="badge">MOCK-UP · real figures from your sheet</span></h1>
+    <div class="sub">As of <b id="asof"></b> · all figures SGD · investments at <b id="basis">cost</b></div>
+  </div>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabDash" aria-selected="true">Dashboard</button>
+    <button role="tab" id="tabUpd" aria-selected="false">Update</button>
+  </div>
+</header>
+
+<!-- ============ DASHBOARD ============ -->
+<div id="viewDash">
+<div class="toolbar">
+  <label><input type="checkbox" id="tCPF" checked> Include CPF</label>
+</div>
+
+<div class="grid kpis" id="kpis"></div>
+
+<section class="card">
+  <h2>Progress to target</h2>
+  <p class="hint">Cash + Joint Investments against each target (edit targets on the Update tab)</p>
+  <div class="sub" id="tgSum" style="margin-bottom:6px"></div>
+  <div id="tgDiag"></div>
+</section>
+
+<div class="grid two">
+  <section class="card" style="margin:0">
+    <h2>Breakdown</h2>
+    <p class="hint">Cash, investments, CPF, physical assets, liabilities</p>
+    <div class="strip" id="strip"></div>
+    <div class="legend" id="stripLegend"></div>
+    <div class="hint" style="margin:14px 0 0">Liquid assets only (excludes CPF and physical assets): <b id="liqTotal"></b></div>
+    <div class="strip" id="strip2"></div>
+    <div class="legend" id="strip2Legend"></div>
+    <div class="rows" id="breakRows" style="margin-top:12px"></div>
+    <div class="bubble" id="liab"></div>
+    <div class="bubble fx" id="fx"></div>
+  </section>
+  <section class="card" style="margin:0">
+    <h2>Physical assets (property)</h2>
+    <p class="hint">Not valued in your sheet. Starting values (S$3.0M condo, S$300k HDB) are placeholders: replace with real valuations. The condo loan is counted under Liabilities.</p>
+    <div class="rows"><div class="r tot"><span>Condo, Bukit Timah</span><span class="muted">owner LQR</span></div></div>
+    <div class="in" style="grid-template-columns:1fr">
+      <label>Market value (S$)<input type="text" id="v2" inputmode="numeric" placeholder="e.g. 2,500,000"></label>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Total paid at purchase: S$827,834 (incl. BSD S$111,100, CPF S$190,000). Net of S$400,000 sponsor: S$427,834.</p>
+    <div class="rows" style="margin-top:12px"><div class="r tot"><span>HDB, Ang Mo Kio</span><span class="muted">owner TSH</span></div></div>
+    <div class="in" style="grid-template-columns:1fr">
+      <label>Market value (S$)<input type="text" id="v1" inputmode="numeric" placeholder="e.g. 600,000"></label>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Renovation and white goods S$114,483 (joint). HDB mortgage runs to Aug 2029 from OA; balance not in sheet.</p>
+  </section>
+</div>
+
+<section class="card">
+  <h2>Progress over time</h2>
+  <p class="hint">Joint investments + cash at each snapshot, with year-end targets in green. Snapshots are not evenly spaced.</p>
+  <div id="c1"></div>
+  <div class="legend"><span><i style="background:var(--s1)"></i>Investments</span><span><i style="background:var(--s2)"></i>Cash and cash-like</span><span><i style="background:var(--s3);height:4px;border-radius:2px;vertical-align:3px"></i>Target</span></div>
+  <p class="hint" style="margin-top:10px">Each target sits on the November snapshot of its year; 2026 has no November snapshot yet, so it sits on the latest one. Targets with no snapshot yet stand alone on the right. The drop from Nov 2024 to Aug 2025 reflects the condo purchase and renovation (S$114k joint); the asset it bought is not valued here, so this is not a full net worth trend. Snapshots before your first Update entry are at cost, and Nov 2025 included the S$6,200 tenant deposit.</p>
+  <details><summary>Table view</summary><div id="t1"></div></details>
+</section>
+
+<div class="grid two">
+  <section class="card" style="margin:0">
+    <h2>CPF over time</h2>
+    <p class="hint">OA + SA + MA, per person, at each tracker date</p>
+    <div id="c2"></div>
+    <div class="legend"><span><i style="background:var(--s1)"></i>QR</span><span><i style="background:var(--s2)"></i>SH</span></div>
+    <p class="hint" style="margin-top:10px">QR's OA fell from S$185k (May 24) to S$14k (Aug 25) when S$190k went into the condo down payment. That value now sits in the property.</p>
+    <details><summary>Table view</summary><div id="t2"></div></details>
+  </section>
+  <section class="card" style="margin:0">
+    <h2>Targets</h2>
+    <p class="hint">Joint savings/investment targets (edit on the Update tab)</p>
+    <div id="targets"></div>
+    <h2 style="margin-top:18px">Monthly cashflow</h2>
+    <p class="hint">Per your Oct 2026 sheet</p>
+    <div class="rows cf" id="cf"></div>
+  </section>
+</div>
+
+<section class="card">
+  <h2>FI calculator</h2>
+  <p class="hint">Basic version. Defaults for spend, return and withdrawal rate are <b>illustrative placeholders</b>, not from your sheet. Contribution is your actual IBKR DCA (S$3,000/month).</p>
+  <div class="in n3">
+    <label>Annual spend (S$)<input type="text" id="fSpend" value="72000" inputmode="numeric"></label>
+    <label>Withdrawal rate (%)<input type="text" id="fSwr" value="4" inputmode="decimal"></label>
+    <label>Real return (%)<input type="text" id="fRet" value="4" inputmode="decimal"></label>
+    <label>Annual contribution (S$)<input type="text" id="fCon" value="36000" inputmode="numeric"></label>
+  </div>
+  <label style="display:flex;gap:6px;align-items:center;font-size:13px;color:var(--ink2);margin-top:10px"><input type="checkbox" id="fCPF"> Count CPF toward FI (locked until retirement age, so off by default)</label>
+  <div class="grid kpis" id="fiOut" style="margin:14px 0 0"></div>
+  <div class="prog"><div id="fiBar"></div></div>
+  <div class="sub" id="fiNote"></div>
+</section>
+
+<div class="warnbox">
+  <b>Needs your confirmation</b>
+  <ul>
+    <li><b>Property values are placeholders</b> (S$3.0M condo, S$300k HDB), not from your sheet. Net worth moves one-for-one with them. Replace with real valuations.</li>
+    <li><b>HDB loan:</b> your sheet says the Standard Chartered mortgage is paid from OA until Aug 2029, so a balance exists. It is not in Liabilities. Add it on the Update tab if you want it counted.</li>
+    <li><b>Rental deposit S$6,200</b> is counted as a liability. It is also held in cash (your Total Joint counts it as an asset), so the two offset.</li>
+    <li><b>Cost vs market value:</b> holdings default to cost (as in your sheet) until you enter market values on the Update tab.</li>
+    <li><b>CPF tab:</b> unlabelled cells (S$2,896; S$66,280; S$136,141) on the May 2026 SA/MA rows were ignored.</li>
+  </ul>
+</div>
+</div>
+
+<!-- ============ UPDATE ============ -->
+<div id="viewUpd" hidden>
+  <div class="card" style="margin-bottom:12px">
+    <h2>Update form</h2>
+    <p class="hint">Saving adds a snapshot to the progress charts and refreshes the dashboard. In this mock-up it is stored in this browser only; the live version would write to your Google Sheet.</p>
+    <label class="lbl" style="max-width:220px">As-of date<input type="date" id="uDate"></label>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>Investments: market value</h2>
+    <p class="hint">Cost is from your sheet. Enter today's market value for each holding.</p>
+    <div class="inv"><span class="h">Holding</span><span class="h" style="text-align:right">Cost (S$)</span><span class="h">Market value (S$)</span></div>
+    <div id="uInv"></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>Cash</h2>
+    <p class="hint">Joint account cash and cash-like balances (excl. Moomoo cash, which is under Investments).</p>
+    <label class="lbl" style="max-width:260px">Cash (S$)<input type="text" id="uCash" inputmode="numeric"></label>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>CPF</h2>
+    <p class="hint">Balances per person (S$).</p>
+    <div class="lbl" style="font-weight:600;margin-top:4px">QR</div>
+    <div class="in n3"><label>OA<input type="text" id="cq0" inputmode="numeric"></label><label>SA<input type="text" id="cq1" inputmode="numeric"></label><label>MA<input type="text" id="cq2" inputmode="numeric"></label></div>
+    <div class="lbl" style="font-weight:600;margin-top:12px">SH</div>
+    <div class="in n3"><label>OA<input type="text" id="cs0" inputmode="numeric"></label><label>SA<input type="text" id="cs1" inputmode="numeric"></label><label>MA<input type="text" id="cs2" inputmode="numeric"></label></div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>Liabilities</h2>
+    <p class="hint">Outstanding balances (S$). Shown on the dashboard under Breakdown.</p>
+    <div class="in n3">
+      <label>Condo loan, Bukit Timah<input type="text" id="uLCondo" inputmode="numeric"></label>
+      <label>Rental deposit owed<input type="text" id="uLDep" inputmode="numeric"></label>
+      <label>HDB loan (optional)<input type="text" id="uLHdb" inputmode="numeric"></label>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:12px">
+    <h2>Targets</h2>
+    <p class="hint">Free-form: name each target (e.g. "2027 YE", "Annual review") and its amount.</p>
+    <div id="uTargets"></div>
+    <div style="margin-top:10px"><button class="btn sm" id="addT">+ Add target</button></div>
+  </div>
+
+  <div>
+    <button class="btn p" id="save">Save update</button>
+    <button class="btn" id="reset">Reset to sheet data</button>
+    <span class="msg" id="msg"></span>
+  </div>
+</div>
+</div>
+<div id="tip"></div>
+
+<script>
+/* Base data = your sheet (Joint_finances_accounting.xlsx). Shaped like the tabs you would keep: Snapshots, CPF, Targets, Liabilities. */
+const BASE = {
+  asOf: "2026-10-01",
+  marketValues: false,
+  investments: [
+    {n:"Astrea 7A (call 2027)", cost:9000, mv:9000},
+    {n:"Astrea 8A (call 2029)", cost:10000, mv:10000},
+    {n:"Astrea 9A (call Aug 2030)", cost:12000, mv:12000},
+    {n:"IBKR", cost:132000, mv:132000},
+    {n:"Moomoo Fullerton cash", cost:10000, mv:10000}
+  ],
+  cash: 12998,
+  baby: 30000,
+  snapshots: [ // date, label, investments, cash
+    ["2024-10-30","Oct 24",56000,137000],
+    ["2024-11-27","Nov 24",61308,143000],
+    ["2025-02-26","Feb 25",61308,111400],
+    ["2025-08-20","Aug 25",91238,38977],
+    ["2025-11-02","Nov 25",112000,23200],
+    ["2026-05-01","May 26",146600,12998],
+    ["2026-10-01","Oct 26",173000,12998]
+  ],
+  cpf: [ // date, label, QR[OA,SA,MA], SH[OA,SA,MA]
+    ["2023-05-01","May 23",[154702,101835,68500],[12634,27839,37549]],
+    ["2024-05-01","May 24",[184701,118130,71500],[2040.71,34969.86,45206.94]],
+    ["2025-08-01","Aug 25",[14359,149499,75500],[7057.97,51019.15,55710.36]],
+    ["2026-05-01","May 26",[9511,172527,78164],[10382,72410,63731]]
+  ],
+  targets: [{l:"2024 YE",a:200000},{l:"2025 YE",a:140000},{l:"2026 YE",a:160000},{l:"2027 review",a:200000}],
+  liab: {condo:2010000, dep:6200, hdb:0},
+  future: [{n:"Car", a:180000},{n:"Baby", a:30000}],
+  prop: {v1:300000, v2:3000000}
+};
+const CASHFLOW = [["Contribution",8000],["Rental income",3100],["Mortgage",-4800],["Monthly fees (maintenance)",-550],["Joint spending",-1500],["Rental expenses",-217.08],["Housing tax",-231.9],["Investment (IBKR)",-3000]];
+const KEY = "hh_state_v3";
+const clone = o => JSON.parse(JSON.stringify(o));
+const $ = id => document.getElementById(id);
+let mem = null;
+function load(){ try{ const s=localStorage.getItem(KEY); if(s) return JSON.parse(s);}catch(e){} return mem?clone(mem):null; }
+function persist(){ mem=clone(state); try{ localStorage.setItem(KEY, JSON.stringify(state)); return true;}catch(e){ return false; } }
+let state = load() || clone(BASE);
+
+const sum = a => a.reduce((x,y)=>x+y,0);
+const fmt = n => Math.round(n).toLocaleString("en-SG");
+const S = n => (n<0?"-":"")+"S$"+fmt(Math.abs(n));
+const K = n => "S$"+Math.round(n/1000)+"k";
+const parse = v => { const x=parseFloat(String(v).replace(/[, ]/g,"")); return isFinite(x)?x:0; };
+const num = id => parse($(id).value);
+const esc = s => String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const mlabel = d => new Date(d+"T00:00:00").toLocaleDateString("en-GB",{month:"short",year:"2-digit"});
+const tip = $("tip");
+function bindTips(root){
+  root.querySelectorAll("[data-tip]").forEach(el=>{
+    el.addEventListener("mousemove",e=>{tip.textContent=el.dataset.tip;tip.style.opacity=1;tip.style.left=Math.min(e.clientX+12,innerWidth-180)+"px";tip.style.top=(e.clientY+14)+"px"});
+    el.addEventListener("mouseleave",()=>tip.style.opacity=0);
+  });
+}
+
+/* ---------- derived ---------- */
+const invMV = () => sum(state.investments.map(x=>x.mv));
+const invCost = () => sum(state.investments.map(x=>x.cost));
+const joint = () => invMV() + state.cash;
+const cpfLatest = () => state.cpf[state.cpf.length-1];
+const cpfTotal = () => { const c=cpfLatest(); return sum(c[2])+sum(c[3]); };
+const liabTotal = () => state.liab.condo + state.liab.dep + state.liab.hdb;
+const propTotal = () => state.prop.v1 + state.prop.v2;
+
+function niceStep(max){
+  const raw = max/4, mag = Math.pow(10,Math.floor(Math.log10(raw)));
+  const f = raw/mag; return (f<=1?1:f<=2?2:f<=5?5:10)*mag;
+}
+function stacked(el, cats, series, colors, label, W, H){
+  W=W||620; H=H||250;
+  const m={l:46,r:8,t:18,b:26}, iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const maxTot = Math.max(...cats.map((c,i)=>sum(series.map(s=>s.values[i]||0))),1);
+  const step = niceStep(maxTot*1.08), max = Math.ceil(maxTot*1.08/step)*step;
+  const bw = Math.min(54, iw/cats.length*0.62);
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${label}">`;
+  for(let v=0; v<=max+1; v+=step){
+    const y = m.t+ih - v/max*ih;
+    s += `<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${m.l-6}" y="${y+4}" text-anchor="end">${v?K(v):"0"}</text>`;
+  }
+  cats.forEach((c,i)=>{
+    const cx = m.l + iw*(i+.5)/cats.length, x=cx-bw/2;
+    let y = m.t+ih, tot=0;
+    series.forEach((ser,k)=>{
+      const v=ser.values[i]; if(!v) return; tot+=v;
+      const h = v/max*ih, hh=Math.max(h-(k>0?2:0),1); y -= h;
+      const top = series.slice(k+1).every(z=>!z.values[i]);
+      s += `<rect class="bar" x="${x}" y="${y}" width="${bw}" height="${hh}" fill="${colors[k]}" rx="${top?4:1}" data-tip="${esc(c)} · ${esc(ser.name)}\n${S(v)}"/>`;
+    });
+    s += `<text class="t2" x="${cx}" y="${y-5}" text-anchor="middle">${K(tot)}</text><text x="${cx}" y="${H-8}" text-anchor="middle">${esc(c)}</text>`;
+  });
+  s += `<line x1="${m.l}" x2="${W-m.r}" y1="${m.t+ih}" y2="${m.t+ih}" stroke="var(--line)"/></svg>`;
+  el.innerHTML = s; bindTips(el);
+}
+function table(el, head, rows){
+  el.innerHTML = `<table><thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")}</tbody></table>`;
+}
+
+/* ---------- dashboard render ---------- */
+function render(){
+  $("asof").textContent = new Date(state.asOf+"T00:00:00").toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  $("basis").textContent = state.marketValues ? "market value" : "cost (no market values entered yet)";
+  const withCPF = $("tCPF").checked;
+  const pr = propTotal(), L = liabTotal(), J = joint();
+  const parts = [["Investments", invMV(), "var(--s1)"],["Cash and cash-like", state.cash, "var(--s2)"]];
+  if(withCPF) parts.push(["CPF", cpfTotal(), "var(--s3)"]);
+  if(pr) parts.push(["Physical assets", pr, "var(--s4)"]);
+  const assets = sum(parts.map(x=>x[1]));
+  const net = assets - L;
+
+  const prevs = state.snapshots.filter(s=>s[0]<state.asOf);
+  const prev = prevs[prevs.length-1];
+  const delta = prev ? J-(prev[2]+prev[3]) : 0;
+  const tg = state.targets[state.targets.length-1];
+  const dI = prev ? invMV()-prev[2] : 0;
+  $("kpis").innerHTML = `
+    <div class="card kpi"><div class="lab">Net worth before mortgage</div><div class="val">${S(J)}</div><div class="note">Cash ${S(state.cash)} + Joint Investments ${S(invMV())}</div></div>
+    <div class="card kpi"><div class="lab">Joint Investments</div><div class="val">${S(invMV())}</div><div class="note">${prev&&prev[2]?`${dI>=0?"+":""}${S(dI)} (${dI>=0?"+":""}${(dI/prev[2]*100).toFixed(1)}%) since ${prev[1]}`:"&nbsp;"}</div></div>
+    <div class="card kpi"><div class="lab">Net worth (assets minus liabilities)</div><div class="val ${net<0?"neg":""}">${S(net)}</div><div class="note ${pr?"":"w"}">${pr?(withCPF?"incl.":"excl.")+" CPF, property at entered values":"Property not valued yet: enter values under Physical assets"}</div></div>`;
+
+  $("strip").innerHTML = parts.map(x=>`<div class="bar" style="flex:${Math.max(x[1],1)};background:${x[2]}" data-tip="${x[0]}\n${S(x[1])} · ${(x[1]/assets*100).toFixed(1)}%"></div>`).join("");
+  $("stripLegend").innerHTML = parts.map(x=>`<span><i style="background:${x[2]}"></i>${x[0]} ${(x[1]/assets*100).toFixed(0)}%</span>`).join("");
+
+  const liqParts = [["Investments", invMV(), "var(--s1)"],["Cash and cash-like", state.cash, "var(--s2)"]], liquid = sum(liqParts.map(x=>x[1]));
+  $("liqTotal").textContent = S(liquid);
+  $("strip2").innerHTML = liqParts.map(x=>`<div class="bar" style="flex:${Math.max(x[1],1)};background:${x[2]}" data-tip="${x[0]}\n${S(x[1])} · ${(x[1]/(liquid||1)*100).toFixed(1)}% of liquid"></div>`).join("");
+  $("strip2Legend").innerHTML = liqParts.map(x=>`<span><i style="background:${x[2]}"></i>${x[0]} ${(x[1]/(liquid||1)*100).toFixed(0)}%</span>`).join("");
+  bindTips($("strip2"));
+
+  let rows = `<div class="r tot"><span>Investments${state.marketValues?" (market value)":" (at cost)"}</span><span>${S(invMV())}</span></div>`;
+  state.investments.forEach(i=>{
+    const g = i.mv - i.cost;
+    rows += `<div class="r sub"><span>${esc(i.n)}${g? ` <span class="muted">(cost ${fmt(i.cost)})</span>`:""}</span><span>${S(i.mv)}</span></div>`;
+  });
+  rows += `<div class="r tot"><span>Cash and cash-like</span><span>${S(state.cash)}</span></div>`;
+  if(withCPF){
+    const c=cpfLatest(), q=c[2], h=c[3];
+    rows += `<div class="r tot"><span>CPF (${c[1]})</span><span>${S(cpfTotal())}</span></div>`;
+    rows += `<div class="r sub"><span>QR: OA ${fmt(q[0])} · SA ${fmt(q[1])} · MA ${fmt(q[2])}</span><span>${S(sum(q))}</span></div>`;
+    rows += `<div class="r sub"><span>SH: OA ${fmt(h[0])} · SA ${fmt(h[1])} · MA ${fmt(h[2])}</span><span>${S(sum(h))}</span></div>`;
+  }
+  rows += `<div class="r tot"><span>Physical assets</span><span>${pr?S(pr):"not valued"}</span></div>`;
+  if(pr){
+    if(state.prop.v2) rows += `<div class="r sub"><span>Condo, Bukit Timah</span><span>${S(state.prop.v2)}</span></div>`;
+    if(state.prop.v1) rows += `<div class="r sub"><span>HDB, Ang Mo Kio</span><span>${S(state.prop.v1)}</span></div>`;
+  }
+  rows += `<div class="r tot"><span>Total assets</span><span>${S(assets)}</span></div>`;
+  $("breakRows").innerHTML = rows;
+
+  let lb = `<div class="bh"><span>Liabilities</span><span>${S(L)}</span></div>`;
+  lb += `<div class="br"><span>Outstanding property loan (Condo, Bukit Timah)</span><span>${S(state.liab.condo)}</span></div>`;
+  lb += `<div class="br"><span>Rental deposit</span><span>${S(state.liab.dep)}</span></div>`;
+  if(state.liab.hdb) lb += `<div class="br"><span>HDB loan</span><span>${S(state.liab.hdb)}</span></div>`;
+  $("liab").innerHTML = lb;
+  const FX = state.future || BASE.future;
+  $("fx").innerHTML = `<div class="bh"><span>Potential future expenses</span><span>${S(sum(FX.map(x=>x.a)))}</span></div>` + FX.map(x=>`<div class="br"><span>${esc(x.n)}</span><span>${S(x.a)}</span></div>`).join("") + `<div class="br" style="font-size:12px;opacity:.85"><span>Not deducted from net worth</span><span></span></div>`;
+  bindTips($("strip"));
+
+  $("v1").value = state.prop.v1 ? fmt(state.prop.v1) : "";
+  $("v2").value = state.prop.v2 ? fmt(state.prop.v2) : "";
+
+  $("targets").innerHTML = `<div class="rows">` + (state.targets.length ? state.targets.map(t=>`<div class="r"><span>${esc(t.l)}</span><span>${S(t.a)}</span></div>`).join("") : `<div class="r"><span class="muted">None set</span><span></span></div>`) + `</div>`;
+
+  const sn = state.snapshots;
+  drawCombined();
+  const cp = state.cpf;
+  stacked($("c2"), cp.map(c=>c[1]), [{name:"QR",values:cp.map(c=>sum(c[2]))},{name:"SH",values:cp.map(c=>sum(c[3]))}], ["var(--s1)","var(--s2)"], "CPF balances by person at each tracker date", 400, 260);
+  table($("t2"),["Date","QR","SH","Total"],cp.map(c=>[c[0],S(sum(c[2])),S(sum(c[3])),S(sum(c[2])+sum(c[3]))]));
+  drawTarget(J);
+  fi();
+}
+
+function combinedData(){
+  const sn = state.snapshots, asYear = +state.asOf.slice(0,4);
+  const cats = sn.map(x=>({date:x[0],l:x[1],inv:x[2],cash:x[3],tg:[]}));
+  state.targets.filter(t=>t.a>0).forEach(t=>{
+    const m = String(t.l).match(/(\d{4})/), y = m?+m[1]:null;
+    let c = null;
+    if(y){
+      c = cats.find(k=>k.date&&k.date.startsWith(y+"-11"));
+      if(!c && y===asYear){ const same=cats.filter(k=>k.date&&k.date.startsWith(String(y))); c = same[same.length-1]||null; }
+    }
+    if(c && !c.tg.length) c.tg.push(t);
+    else cats.push({date:null,l:'Next',inv:0,cash:0,tg:[t]});
+  });
+  return cats;
+}
+function drawCombined(){
+  const C = combinedData(), el=$("c1");
+  const W=620,H=306,m={l:46,r:8,t:22,b:66}, iw=W-m.l-m.r, ih=H-m.t-m.b;
+  const mx = Math.max(1,...C.map(c=>Math.max(c.inv+c.cash, ...(c.tg.map(t=>t.a)))))*1.1, step=niceStep(mx), max=Math.ceil(mx/step)*step;
+  const slot=iw/C.length, bw=Math.min(54,slot*0.62), base=m.t+ih, Y=v=>base-v/max*ih;
+  let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Joint investments and cash at each snapshot with year-end targets">`;
+  for(let v=0; v<=max+1; v+=step){ const y=Y(v); s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/><text x="${m.l-6}" y="${y+4}" text-anchor="end">${v?K(v):"0"}</text>`; }
+  C.forEach((c,i)=>{
+    const cx=m.l+slot*(i+.5), x=cx-bw/2, tot=c.inv+c.cash;
+    let top=base;
+    if(tot){
+      const hi=c.inv/max*ih, hc=c.cash/max*ih;
+      if(c.inv) s+=`<rect class="bar" x="${x}" y="${base-hi}" width="${bw}" height="${hi}" fill="var(--s1)" rx="${c.cash?1:4}" data-tip="${esc(c.l)} · Investments\n${S(c.inv)}"/>`;
+      if(c.cash) s+=`<rect class="bar" x="${x}" y="${base-hi-hc}" width="${bw}" height="${Math.max(hc-(c.inv?2:0),1)}" fill="var(--s2)" rx="4" data-tip="${esc(c.l)} · Cash and cash-like\n${S(c.cash)}"/>`;
+      top=base-hi-hc;
+    }
+    let labelY=top;
+    c.tg.forEach(t=>{
+      const y=Y(t.a); labelY=Math.min(labelY,y);
+      const met=tot>=t.a;
+      s+=`<line x1="${cx-bw/2-8}" x2="${cx+bw/2+8}" y1="${y}" y2="${y}" stroke="var(--s3)" stroke-width="3.5" stroke-linecap="round"/>`;
+      s+=`<rect class="bar" x="${cx-bw/2-10}" y="${y-8}" width="${bw+20}" height="16" fill="transparent" data-tip="Target · ${esc(t.l)}\n${S(t.a)}${tot?"\n"+(met?"Met: ":"Short: ")+S(tot-t.a):""}"/>`;
+    });
+    if(tot) s+=`<text class="t2" x="${cx}" y="${labelY-6}" text-anchor="middle">${K(tot)}</text>`;
+    else if(c.tg.length) s+=`<text class="t2" x="${cx}" y="${labelY-8}" text-anchor="middle">${K(c.tg[0].a)}</text>`;
+    s+=`<text x="${cx}" y="${H-46}" text-anchor="middle">${esc(c.l)}</text>`;
+    if(c.tg.length){
+      const t=c.tg[0];
+      if(tot) s+=`<text class="tg" x="${cx}" y="${H-30}" text-anchor="middle">${tot>=t.a?"▲":"▼"} ${Math.round(tot/t.a*100)}%</text>`;
+      s+=`<text class="tg" x="${cx}" y="${H-14}" text-anchor="middle">${esc(t.l)}</text>`;
+    }
+  });
+  s+=`<line x1="${m.l}" x2="${W-m.r}" y1="${base}" y2="${base}" stroke="var(--line)"/></svg>`;
+  el.innerHTML=s; bindTips(el);
+  table($("t1"),["Snapshot","Investments","Cash","Total","Target","Achieved"],C.map(c=>{const t=c.tg[0],tot=c.inv+c.cash; return [c.date||esc(c.l),tot?S(c.inv):"–",tot?S(c.cash):"–",tot?S(tot):"–",t?esc(t.l)+" "+S(t.a):"–",t&&tot?Math.round(tot/t.a*100)+"%":"–"];}));
+}
+
+function drawTarget(J){
+  const T = state.targets.filter(t=>t.a>0 && String(t.l).trim()!=="2024 YE"), el=$("tgDiag");
+  if(!T.length){ el.innerHTML='<div class="muted">No targets set. Add one on the Update tab.</div>'; $("tgSum").textContent=""; return; }
+  const last = T[T.length-1];
+  $("tgSum").innerHTML = `<b>${Math.round(J/last.a*100)}%</b> of <b>${esc(last.l)}</b> target (${S(last.a)}) · ${J>=last.a?"target met":S(last.a-J)+" to go"}`;
+  const groups = {}; T.forEach(t=>{ (groups[t.a]=groups[t.a]||[]).push(t.l); });
+  const amts = Object.keys(groups).map(Number).sort((a,b)=>a-b);
+  const maxNames = Math.max(...amts.map(a=>groups[a].length));
+  const W=620, m={l:10,r:30}, barY=44, barH=24, H=barY+barH+22+maxNames*14+8;
+  const max = Math.max(J,...amts)*1.08, iw=W-m.l-m.r, X=v=>m.l+v/max*iw;
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cash plus Joint Investments versus targets">`;
+  s += `<rect x="${m.l}" y="${barY}" width="${iw}" height="${barH}" rx="6" fill="var(--grid)"/>`;
+  s += `<rect class="bar" x="${m.l}" y="${barY}" width="${Math.max(X(J)-m.l,2)}" height="${barH}" rx="6" fill="var(--s1)" data-tip="Joint Investments\n${S(J)}"/>`;
+  if(X(amts[0])-m.l>190 && X(J)-m.l>190) s += `<text class="on" x="${m.l+12}" y="${barY+barH/2+4}">Now ${S(J)}</text>`;
+  else s += `<text class="tb" x="${m.l}" y="${barY-30}">Now ${S(J)}</text>`;
+  amts.forEach(a=>{
+    const x=X(a), met=J>=a, isLast=a===last.a;
+    s += `<line x1="${x}" x2="${x}" y1="${barY-8}" y2="${barY+barH+8}" stroke="${met?"var(--s3)":"var(--ink2)"}" stroke-width="${isLast?3:2}" stroke-linecap="round"/>`;
+    s += `<text class="${isLast?"tb":"t2"}" x="${x}" y="${barY-14}" text-anchor="middle">${K(a)}</text>`;
+    groups[a].forEach((n,i)=>{ s += `<text class="${isLast?"tb":""}" x="${x}" y="${barY+barH+24+i*14}" text-anchor="middle">${esc(n)}</text>`; });
+    s += `<rect class="bar" x="${x-10}" y="${barY-24}" width="20" height="${H-barY+16}" fill="transparent" data-tip="${esc(groups[a].join(" · "))}\n${S(a)}\n${met?"Met":S(a-J)+" to go"}"/>`;
+  });
+  s += `</svg>`;
+  el.innerHTML = s; bindTips(el);
+}
+
+const cfMax = Math.max(...CASHFLOW.map(x=>Math.abs(x[1])));
+$("cf").innerHTML = CASHFLOW.map(x=>`<div class="r"><span>${x[0]}</span><div class="bw"><div style="width:${Math.abs(x[1])/cfMax*100}%;background:${x[1]>=0?"var(--s3)":"var(--neg)"}"></div></div><span>${S(x[1])}</span></div>`).join("")
+  + `<div class="r tot"><span>Remaining savings</span><span></span><span>${S(sum(CASHFLOW.map(x=>x[1])))}</span></div>`;
+
+function fi(){
+  const spend=num("fSpend"), swr=num("fSwr")/100, r=num("fRet")/100, c=num("fCon");
+  const start = joint() + ($("fCPF").checked?cpfTotal():0);
+  const target = swr>0 ? spend/swr : 0;
+  let yrs = null;
+  if(start>=target) yrs = 0;
+  else if(r>0 && target>0){ yrs = Math.log((target+c/r)/(start+c/r))/Math.log(1+r); }
+  else if(r===0 && c>0) yrs = (target-start)/c;
+  const pct = target? Math.min(start/target,1)*100 : 0;
+  $("fiOut").innerHTML = `
+    <div class="card kpi"><div class="lab">FI number</div><div class="val">${S(target)}</div><div class="note">spend ÷ withdrawal rate</div></div>
+    <div class="card kpi"><div class="lab">Starting pot</div><div class="val">${S(start)}</div><div class="note">${pct.toFixed(1)}% of FI number</div></div>
+    <div class="card kpi"><div class="lab">Years to FI</div><div class="val">${yrs===null?"n/a":yrs===0?"Reached":yrs.toFixed(1)}</div><div class="note">${yrs?`around ${new Date().getFullYear()+Math.ceil(yrs)}`:"&nbsp;"}</div></div>`;
+  $("fiBar").style.width = pct+"%";
+  $("fiNote").textContent = "Real (inflation-adjusted) return, constant contribution, no property income or CPF payouts. Rental income of about S$3,100/month could offset spend and is not modelled.";
+}
+
+/* ---------- Google Sheet link: schema + wiring points ----------
+   Tabs (row 1 = headers): Meta, Holdings, CPF, Snapshots, Liabilities, Targets, Property, Future.
+   stateToTabs / tabsToState are pure converters. To link a sheet, set SHEET.push (called after every Save)
+   and optionally SHEET.pull (returns the same tab object). Nothing here talks to Google by itself. */
+const SHEET = { push:null, pull:null };
+function stateToTabs(st){
+  const FX = st.future || BASE.future;
+  return {
+    Meta:[["key","value"],["asOf",st.asOf],["marketValues",st.marketValues?1:0],["cash",st.cash]],
+    Holdings:[["name","cost","market_value"]].concat(st.investments.map(i=>[i.n,i.cost,i.mv])),
+    CPF:[["date","label","qr_oa","qr_sa","qr_ma","sh_oa","sh_sa","sh_ma"]].concat(st.cpf.map(c=>[c[0],c[1]].concat(c[2],c[3]))),
+    Snapshots:[["date","label","investments","cash"]].concat(st.snapshots.map(x=>x.slice())),
+    Liabilities:[["item","amount"],["condo_loan",st.liab.condo],["rental_deposit",st.liab.dep],["hdb_loan",st.liab.hdb]],
+    Targets:[["label","amount"]].concat(st.targets.map(t=>[t.l,t.a])),
+    Property:[["item","value"],["condo",st.prop.v2],["hdb",st.prop.v1]],
+    Future:[["item","amount"]].concat(FX.map(x=>[x.n,x.a]))
+  };
+}
+function tabsToState(t){
+  const body = k => (t[k]||[]).slice(1).filter(r=>r && r.some(c=>String(c??"").trim()!==""));
+  const kv = k => Object.fromEntries(body(k).map(r=>[String(r[0]).trim(), r[1]]));
+  const meta = kv("Meta"), liab = kv("Liabilities"), prop = kv("Property");
+  return {
+    asOf: String(meta.asOf), marketValues: parse(meta.marketValues)===1, cash: parse(meta.cash),
+    investments: body("Holdings").map(r=>({n:String(r[0]),cost:parse(r[1]),mv:parse(r[2])})),
+    cpf: body("CPF").map(r=>[String(r[0]),String(r[1]),[2,3,4].map(i=>parse(r[i])),[5,6,7].map(i=>parse(r[i]))]),
+    snapshots: body("Snapshots").map(r=>[String(r[0]),String(r[1]),parse(r[2]),parse(r[3])]),
+    liab: {condo:parse(liab.condo_loan),dep:parse(liab.rental_deposit),hdb:parse(liab.hdb_loan)},
+    targets: body("Targets").map(r=>({l:String(r[0]),a:parse(r[1])})),
+    prop: {v2:parse(prop.condo),v1:parse(prop.hdb)},
+    future: body("Future").map(r=>({n:String(r[0]),a:parse(r[1])}))
+  };
+}
+window.HH = { stateToTabs, tabsToState, getState:()=>state, setState:(st)=>{ state=st; persist(); render(); }, SHEET };
+
+/* ---------- update form ---------- */
+let tRows = [];
+function drawTargets(){
+  $("uTargets").innerHTML = tRows.map((t,i)=>`<div class="trow"><input type="text" data-i="${i}" data-k="l" value="${esc(t.l)}" placeholder="e.g. 2027 YE"><input type="text" data-i="${i}" data-k="a" value="${t.a?fmt(t.a):""}" placeholder="Amount (S$)" inputmode="numeric"><button class="btn sm" data-del="${i}" aria-label="Remove target">Remove</button></div>`).join("");
+  $("uTargets").querySelectorAll("input").forEach(el=>el.addEventListener("input",()=>{ const r=tRows[+el.dataset.i]; r[el.dataset.k]= el.dataset.k==="a"?parse(el.value):el.value; }));
+  $("uTargets").querySelectorAll("[data-del]").forEach(b=>b.addEventListener("click",()=>{ tRows.splice(+b.dataset.del,1); drawTargets(); }));
+}
+function fillForm(){
+  const today = new Date(Date.now()+8*3600e3).toISOString().slice(0,10);
+  $("uDate").value = today;
+  $("uInv").innerHTML = state.investments.map((x,i)=>`<div class="inv"><span>${esc(x.n)}</span><span class="cost">${fmt(x.cost)}</span><input type="text" id="uInv${i}" inputmode="numeric" value="${fmt(x.mv)}" aria-label="Market value of ${esc(x.n)}"></div>`).join("");
+  $("uCash").value = fmt(state.cash);
+  const c = cpfLatest();
+  [0,1,2].forEach(k=>{ $("cq"+k).value=fmt(c[2][k]); $("cs"+k).value=fmt(c[3][k]); });
+  $("uLCondo").value=fmt(state.liab.condo); $("uLDep").value=fmt(state.liab.dep); $("uLHdb").value=state.liab.hdb?fmt(state.liab.hdb):"";
+  tRows = clone(state.targets); drawTargets();
+}
+async function save(){
+  const d = $("uDate").value;
+  if(!d){ flash("Pick an as-of date.",true); return; }
+  const next = clone(state);
+  next.asOf = d;
+  next.investments.forEach((x,i)=>{ x.mv = parse($("uInv"+i).value); });
+  next.cash = num("uCash");
+  next.marketValues = true;
+  next.liab = {condo:num("uLCondo"), dep:num("uLDep"), hdb:num("uLHdb")};
+  next.targets = tRows.filter(t=>String(t.l).trim() && t.a>0).map(t=>({l:String(t.l).trim(),a:t.a}));
+  const inv = sum(next.investments.map(x=>x.mv));
+  const lab = mlabel(d);
+  next.snapshots = next.snapshots.filter(s=>s[0]!==d).concat([[d,lab,inv,next.cash]]).sort((a,b)=>a[0]<b[0]?-1:1);
+  const cp = [d,lab,[0,1,2].map(k=>num("cq"+k)),[0,1,2].map(k=>num("cs"+k))];
+  next.cpf = next.cpf.filter(c=>c[0]!==d).concat([cp]).sort((a,b)=>a[0]<b[0]?-1:1);
+  state = next;
+  const ok = persist();
+  render();
+  if(SHEET.push){
+    flash("Saved. Syncing to Google Sheet...", false);
+    try{ await SHEET.push(stateToTabs(state)); flash("Saved and synced to Google Sheet.", false); }
+    catch(e){ flash("Saved here, but the Google Sheet sync failed: "+(e&&e.message||e), true); }
+  } else {
+    flash(ok ? "Saved. Dashboard updated. (Google Sheet link not set up yet.)" : "Updated for this session only (browser storage unavailable).", false);
+  }
+}
+function flash(t,bad){ const m=$("msg"); m.textContent=t; m.style.color = bad?"var(--bad)":"var(--good)"; }
+$("save").addEventListener("click",save);
+$("reset").addEventListener("click",()=>{ state=clone(BASE); mem=null; try{localStorage.removeItem(KEY);}catch(e){} fillForm(); render(); flash("Reset to sheet data.",false); });
+$("addT").addEventListener("click",()=>{ tRows.push({l:"",a:0}); drawTargets(); });
+
+/* ---------- tabs & wiring ---------- */
+function show(v){
+  const dash = v==="dash";
+  $("viewDash").hidden=!dash; $("viewUpd").hidden=dash;
+  $("tabDash").setAttribute("aria-selected",dash); $("tabUpd").setAttribute("aria-selected",!dash);
+  if(!dash){ fillForm(); $("msg").textContent=""; }
+}
+$("tabDash").addEventListener("click",()=>show("dash"));
+$("tabUpd").addEventListener("click",()=>show("upd"));
+["tCPF","fSpend","fSwr","fRet","fCon","fCPF"].forEach(id=>$(id).addEventListener("input",render));
+["v1","v2"].forEach(id=>$(id).addEventListener("input",()=>{ state.prop[id]=parse($(id).value); persist(); renderKeepFocus(); }));
+function renderKeepFocus(){ const a=document.activeElement, id=a&&a.id, pos=a&&a.selectionStart; const v1=$("v1").value,v2=$("v2").value; render(); $("v1").value=v1; $("v2").value=v2; if(id){ const e=$(id); if(e){ e.focus(); try{e.setSelectionRange(pos,pos);}catch(_){} } } }
+render();
+
+/* ---------- Google Sheet link (Google Sheets connector via the mcp capability) ---------- */
+(function(){
+  const SERVER = "Google Sheets";
+  const SHEET_ID = "1PcvehhVvdI4vYGItPV2l-UIJabSJh2cd9CmN_ywu-ok";
+  const TABS = ["Meta","Holdings","CPF","Snapshots","Liabilities","Targets","Property","Future"];
+  const NOCACHE = { cache:false };
+
+  const sub = document.querySelector("header .sub");
+  const badge = document.createElement("div");
+  badge.id = "syncStatus"; badge.setAttribute("role","status"); badge.style.cssText = "font-size:12px;margin-top:4px";
+  if(sub) sub.after(badge);
+  function setSync(kind, text){ badge.textContent = text; badge.style.color = kind==="bad" ? "var(--bad)" : kind==="ok" ? "var(--good)" : ""; }
+
+  function why(e){
+    const c = e && e.code, m = (e && e.message) || String(e);
+    if(c==="needs_reauth") return "reconnect Google Sheets in claude.ai Settings → Connectors";
+    if(c==="server_not_connected" || c==="selection_required") return "the Google Sheets connector isn’t connected in claude.ai Settings → Connectors";
+    if(c==="not_in_manifest" || c==="approval_required" || c==="consent_required" || c==="not_granted") return "access to Google Sheets wasn’t allowed for this page";
+    if(c==="blocked_by_policy") return "Google Sheets is blocked by your organization’s policy";
+    return m;
+  }
+
+  let mcpP = null;
+  function getMcp(){
+    if(!mcpP) mcpP = (async()=>{ try{ return (window.claude && window.claude.use) ? await window.claude.use("mcp") : null; }catch(e){ return null; } })();
+    return mcpP;
+  }
+  async function call(tool, input){
+    const mcp = await getMcp();
+    if(!mcp){ const e = new Error("the Google Sheets link only works when this page is open in claude.ai"); e.code = "unavailable"; throw e; }
+    return mcp.callTool(SERVER, tool, input, NOCACHE);
+  }
+  function valuesOf(res){
+    let p = res && res.payload;
+    if(typeof p === "string"){ try{ p = JSON.parse(p); }catch(e){} }
+    if(p && typeof p === "object") return Array.isArray(p.values) ? p.values : [];
+    throw new Error("unexpected response from Google Sheets");
+  }
+
+  HH.SHEET.pull = async function(){
+    const got = await Promise.all(TABS.map(t => call("get_values", { spreadsheetId:SHEET_ID, range:t+"!A1:Z" }).then(valuesOf)));
+    const tabs = {};
+    TABS.forEach((t,i) => { tabs[t] = got[i]; });
+    const meta = tabs.Meta.slice(1).find(r => r && String(r[0]).trim()==="asOf");
+    if(!meta || String(meta[1] ?? "").trim()==="") throw new Error("the Meta tab has no asOf value, so nothing was loaded");
+    ["Holdings","CPF","Snapshots"].forEach(t => { if(tabs[t].length < 2) throw new Error("the "+t+" tab has no data rows, so nothing was loaded"); });
+    HH.setState(HH.tabsToState(tabs));
+    return tabs;
+  };
+
+  // update_values types cells like a person would (dates and labels such as "Oct 26" become real dates),
+  // so every non-empty text cell gets a leading apostrophe, which Sheets strips and stores as plain text.
+  const colName = n => String.fromCharCode(64 + n);
+  const cell = v => typeof v === "number" ? (isFinite(v) ? v : "") : (v == null || v === "" ? "" : "'" + String(v));
+  async function doPush(tabs){
+    const jobs = TABS.map(t => {
+      const rows = tabs && tabs[t];
+      if(!Array.isArray(rows) || !rows.length) throw new Error("no data for the "+t+" tab");
+      const w = Math.max(...rows.map(r => r.length));
+      return { t, n: rows.length, w, vals: rows.map(r => Array.from({length:w}, (_,i) => cell(r[i]))) };
+    });
+    // write first, then clear only the rows below the new data, so a failed write never blanks a tab
+    const res = await Promise.allSettled(jobs.map(j => call("update_values", { spreadsheetId:SHEET_ID, range:j.t+"!A1:"+colName(j.w)+j.n, values:j.vals })));
+    const failed = res.find(r => r.status==="rejected");
+    if(failed) throw failed.reason;
+    await call("batch_clear_values", { spreadsheetId:SHEET_ID, ranges: jobs.map(j => j.t+"!A"+(j.n+1)+":Z") });
+  }
+  let chain = Promise.resolve();
+  HH.SHEET.push = function(tabs){
+    const run = chain.catch(()=>{}).then(async()=>{
+      setSync("busy", "Google Sheet: saving…");
+      try{ await doPush(tabs); setSync("ok", "Google Sheet: synced"); }
+      catch(e){ const msg = why(e); setSync("bad", "Google Sheet sync failed ("+msg+"). Changes are saved locally."); throw new Error(msg); }
+    });
+    chain = run;
+    return run;
+  };
+
+  setSync("busy", "Google Sheet: loading…");
+  HH.SHEET.pull().then(
+    () => setSync("ok", "Google Sheet: loaded"),
+    e => setSync("bad", "Google Sheet sync failed ("+why(e)+"). Showing local data.")
+  );
+})();
+</script>
+</body>
+</html>
